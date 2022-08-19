@@ -1,0 +1,51 @@
+from flask import Flask, render_template, jsonify, request
+from flask_cors import CORS, cross_origin
+import pickle
+
+app = Flask(__name__)
+
+
+@app.route('/predict', methods=['GET', 'POST'])
+@cross_origin()
+
+
+def index():
+
+    if request.method == 'POST':
+        try:
+
+            number_of_times_pregnant = float(request.json['number_of_times_pregnant'])
+            plasma_glucose_concentration = float(request.json['plasma_glucose_concentration'])
+            diastolic_blood_pressure = float(request.json['diastolic_blood_pressure'])
+            triceps_skinfold_thickness = float(request.json['triceps_skinfold_thickness'])
+            serum_insulin = float(request.json['serum_insulin'])
+            body_mass_index = float(request.json['body_mass_index'])
+            diabetes_pedigree_function = float(request.json['diabetes_pedigree_function'])
+            age = float(request.json['age'])
+
+            filename_scaler = 'scaler_model.pickle'
+            filename = 'xgboost_model.pickle'
+            scaler_model = pickle.load(open(filename_scaler, 'rb'))
+            loaded_model = pickle.load(open(filename, 'rb'))
+
+            scaled_data = scaler_model.transform([[number_of_times_pregnant, plasma_glucose_concentration, diastolic_blood_pressure, triceps_skinfold_thickness, serum_insulin,body_mass_index,diabetes_pedigree_function, age]])
+            prediction = loaded_model.predict(scaled_data)
+            print(prediction)
+
+            if prediction == 1:
+
+                result = 'The patient is diabetic.'
+
+            else:
+                result = 'The patient is not diabetic.'
+
+                return jsonify(result)
+
+        except Exception as e:
+            print('The exception message is:', e)
+
+            return jsonify('error:something is wrong.')
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
